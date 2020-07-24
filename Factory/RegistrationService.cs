@@ -5,59 +5,78 @@ namespace LicensePlates.Factory
 {
     class ValidatorFactory
     {
-        // Simple factory
-        public static IValidator Create(CustomerType customerType) => customerType switch
+        public static Validator Create(string plate, CustomerType customerType) => customerType switch
         {
-            CustomerType.Diplomat => new DiplomatValidator(),
-            CustomerType.Advertisment => new AdvertismentValidator(),
-            CustomerType.Normal => new NormalValidator(),
-            CustomerType.Taxi => new TaxiValidator(),
+            CustomerType.Diplomat => new DiplomatValidator(plate),
+            CustomerType.Advertisment => new AdvertismentValidator(plate),
+            CustomerType.Normal => new NormalValidator(plate),
+            CustomerType.Taxi => new TaxiValidator(plate),
             _ => throw new System.Exception()
         };
     }
 
-    interface IValidator
+    abstract class Validator
     {
-        bool IsValid(string plate);
-    }
+        protected string Plate { get; }
 
-    class Helper
-    {
-        public static bool IsNormalPlate(string plate)
+        public Validator(string plate)
+        {
+            Plate = plate;
+        }
+
+        public abstract bool IsValid { get; }
+
+        public bool IsNormalPlate => Regex.IsMatch(Plate, RegexForNormalPlate());
+
+        public bool ReserveredForTaxi => Plate.Last() == 'T';
+
+        public bool ReserveredForAdvertisments => Plate.StartsWith("MLB");
+
+        private static string ExcludeLetters(string letters, string lettersToRemove) => string.Join("", letters.Where(c => !lettersToRemove.Contains(c)));
+
+        private static string RegexForNormalPlate()
         {
             var allSwedishLetters = "ABCDEFGHIJKLMNOPQRSTWXYZÅÄÖ";
             var invalidLetters = "IQVÅÄÖ";
             var validLetters = ExcludeLetters(allSwedishLetters, invalidLetters);
             var validLastCharacter = validLetters + "0123456789";
-            var regex = "[" + validLetters + "]{3} [0-9][0-9][" + validLastCharacter + "]";
-            return Regex.IsMatch(plate, regex);
+            return "[" + validLetters + "]{3} [0-9][0-9][" + validLastCharacter + "]";
         }
 
-        public static bool ReserveredForTaxi(string plate) => plate.Last() == 'T';
-
-        public static bool ReserveredForAdvertisments(string plate) => plate.StartsWith("MLB");
-
-        private static string ExcludeLetters(string letters, string lettersToRemove) => string.Join("", letters.Where(c => !lettersToRemove.Contains(c)));
     }
 
-    class TaxiValidator: IValidator
+    class TaxiValidator : Validator
     {
-        public bool IsValid(string plate) => Helper.IsNormalPlate(plate) && !Helper.ReserveredForAdvertisments(plate);
+        public TaxiValidator(string plate) : base(plate)
+        {
+        }
+
+        public override bool IsValid => IsNormalPlate && !ReserveredForAdvertisments;
     }
 
-    class NormalValidator : IValidator
+    class NormalValidator : Validator
     {
-        public bool IsValid(string plate) => Helper.IsNormalPlate(plate) && !Helper.ReserveredForAdvertisments(plate) && !Helper.ReserveredForTaxi(plate);
+        public NormalValidator(string plate) : base(plate)
+        {
+        }
+
+        public override bool IsValid => IsNormalPlate && !ReserveredForAdvertisments && !ReserveredForTaxi;
     }
 
-    class DiplomatValidator : IValidator
+    class AdvertismentValidator : Validator
     {
-        public bool IsValid(string plate) => Regex.IsMatch(plate, "[A-Z]{2} \\d\\d\\d [A-Z]");
+        public AdvertismentValidator(string plate) : base(plate)
+        {
+        }
+        public override bool IsValid => IsNormalPlate && !ReserveredForTaxi;
     }
 
-    class AdvertismentValidator : IValidator
+    class DiplomatValidator : Validator
     {
-        public bool IsValid(string plate) => Helper.IsNormalPlate(plate) && !Helper.ReserveredForTaxi(plate);
+        public DiplomatValidator(string plate) : base(plate)
+        {
+        }
+        public override bool IsValid => Regex.IsMatch(Plate, "[A-Z]{2} \\d\\d\\d [A-Z]");
     }
 
     class RegistrationService : IRegistrationService
@@ -71,17 +90,17 @@ namespace LicensePlates.Factory
 
         public int NrOfRegistredPlates => _repo.CountRegisteredPlates();
 
-        public Result AddLicensePlate(string number, CustomerType customer)
+        public Result AddLicensePlate(string plate, CustomerType customer)
         {
-            IValidator validator = ValidatorFactory.Create(customer);
+            Validator validator = ValidatorFactory.Create(plate, customer);
 
-            if (!validator.IsValid(number))
+            if (!validator.IsValid)
                 return Result.InvalidFormat;
 
-            if (!_repo.IsAvailable(number))
+            if (!_repo.IsAvailable(plate))
                 return Result.NotAvailable;
 
-            _repo.Save(number);
+            _repo.Save(plate);
             return Result.Success;
         }
 
