@@ -60,7 +60,7 @@ namespace LicensePlates.Factory
         public bool IsValid(string plate) => Helper.IsNormalPlate(plate) && !Helper.ReserveredForTaxi(plate);
     }
 
-    class RegistrationService
+    class RegistrationService : IRegistrationService
     {
         private readonly ILicensePlateRepository _repo;
 

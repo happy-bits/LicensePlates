@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace LicensePlates.NoPattern
 {
-    class RegistrationService
+    class RegistrationService : IRegistrationService
     {
         private readonly ILicensePlateRepository _repo;
 
