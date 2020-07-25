@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿// First attempt with Rule Engine (this is no good solution
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace LicensePlates.RuleEngine
@@ -15,26 +18,20 @@ namespace LicensePlates.RuleEngine
         };
     }
 
-    /*
-     Good: Plate is reused so e.g "ReservedForTaxi" is just a prop
-     Bad: This class have too many responsibilities. IsNormalPlate, ReservedForTaxi etc don't belong here
-         */
-    abstract class Validator
+    class ValidatorEngine
     {
-        protected string Plate { get; }
-
-        public Validator(string plate)
+        public ValidatorEngine()
         {
-            Plate = plate;
+            Rules = new List<Func<string, Validator, bool>> { IsNormalPlate, NoConflictWithTaxi, NoConflictWithAdvertisments };
         }
+        public List<Func<string, Validator, bool>> Rules {get;set;}
 
-        public abstract bool IsValid { get; }
+        private bool IsNormalPlate(string plate, Validator validator) => Regex.IsMatch(plate, RegexForNormalPlate());
+        private bool IsCorrectFormatForDiplomat(string plate) => Regex.IsMatch(plate, "[A-Z]{2} \\d\\d\\d [A-Z]");
 
-        protected bool IsNormalPlate => Regex.IsMatch(Plate, RegexForNormalPlate());
+        private bool NoConflictWithTaxi(string plate, Validator validator) => validator is TaxiValidator || plate.Last() != 'T';
 
-        protected bool ReserveredForTaxi => Plate.Last() == 'T';
-
-        protected bool ReserveredForAdvertisments => Plate.StartsWith("MLB");
+        private bool NoConflictWithAdvertisments(string plate, Validator validator) => validator is AdvertismentValidator || !plate.StartsWith("MLB");
 
         private static string ExcludeLetters(string letters, string lettersToRemove) => string.Join("", letters.Where(c => !lettersToRemove.Contains(c)));
 
@@ -47,20 +44,39 @@ namespace LicensePlates.RuleEngine
             return "[" + validLetters + "]{3} [0-9][0-9][" + validLastCharacter + "]";
         }
 
+        public bool Validate(string plate, Validator validator)
+        {
+            if (validator is DiplomatValidator && IsCorrectFormatForDiplomat(plate))
+                return true;
+
+            if (validator is DiplomatValidator && !IsCorrectFormatForDiplomat(plate))
+                return false;
+
+            foreach (var rule in Rules){
+                if (!rule(plate, validator))
+                    return false;
+            }
+            return true;
+        }
     }
 
-    /*
-     Good: these validators is short and simple
-     Bad: if a new validator is inserted (e.g VIP) we probably need to change IsValid for many of the validators
+    abstract class Validator
+    {
+        protected string Plate { get; }
 
-   */
+        public Validator(string plate)
+        {
+            Plate = plate;
+        }
+
+        public bool IsValid => new ValidatorEngine().Validate(Plate, this);
+    }
+
     class TaxiValidator : Validator
     {
         public TaxiValidator(string plate) : base(plate)
         {
         }
-
-        public override bool IsValid => IsNormalPlate && !ReserveredForAdvertisments;
     }
 
     class NormalValidator : Validator
@@ -68,8 +84,6 @@ namespace LicensePlates.RuleEngine
         public NormalValidator(string plate) : base(plate)
         {
         }
-
-        public override bool IsValid => IsNormalPlate && !ReserveredForAdvertisments && !ReserveredForTaxi;
     }
 
     class AdvertismentValidator : Validator
@@ -77,7 +91,6 @@ namespace LicensePlates.RuleEngine
         public AdvertismentValidator(string plate) : base(plate)
         {
         }
-        public override bool IsValid => IsNormalPlate && !ReserveredForTaxi;
     }
 
     class DiplomatValidator : Validator
@@ -85,10 +98,7 @@ namespace LicensePlates.RuleEngine
         public DiplomatValidator(string plate) : base(plate)
         {
         }
-        public override bool IsValid => Regex.IsMatch(Plate, "[A-Z]{2} \\d\\d\\d [A-Z]");
     }
-
-    // Good: this class is simpler than NoPattern
 
     class RegistrationService : IRegistrationService
     {
