@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace LicensePlates.Factory
+namespace LicensePlates.Lab
 {
     class ValidatorFactory
     {
@@ -15,10 +15,6 @@ namespace LicensePlates.Factory
         };
     }
 
-    /*
-     Good: Plate is reused so e.g "ReservedForTaxi" is just a prop
-     Bad: This class have too many responsibilities. IsNormalPlate, ReservedForTaxi etc don't belong here
-         */
     abstract class Validator
     {
         protected string Plate { get; }
@@ -49,11 +45,6 @@ namespace LicensePlates.Factory
 
     }
 
-    /*
-     Good: these validators is short and simple
-     Bad: if a new validator is inserted (e.g VIP) we probably need to change IsValid for many of the validators
-
-   */
     class TaxiValidator : Validator
     {
         public TaxiValidator(string plate) : base(plate)
@@ -87,8 +78,6 @@ namespace LicensePlates.Factory
         }
         public override bool IsValid => Regex.IsMatch(Plate, "[A-Z]{2} \\d\\d\\d [A-Z]");
     }
-
-    // Good: this class is simpler than NoPattern
 
     class RegistrationService : IRegistrationService
     {
