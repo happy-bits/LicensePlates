@@ -18,6 +18,7 @@ namespace LicensePlates
             _services = new IRegistrationService[] {
                 new NoPattern.RegistrationService(new FakeLicensePlateRepository()) ,
                 new Factory.RegistrationService(new FakeLicensePlateRepository()) ,
+                new Static.RegistrationService(new FakeLicensePlateRepository()) ,
             };
         }
 
@@ -52,7 +53,7 @@ namespace LicensePlates
         [TestMethod]
         [DataRow("MLB 123")]
         [DataRow("MLB 456")]
-        public void return_OnlyForAdvertisment_when_non_advertisment_try_register_plate_starting_with_MLB(string plate)
+        public void return_InvalidFormat_when_non_advertisment_try_register_plate_starting_with_MLB(string plate)
         {
             foreach (var service in _services)
             {
@@ -64,7 +65,7 @@ namespace LicensePlates
         [TestMethod]
         [DataRow("ABC 12T")]
         [DataRow("CCC 77T")]
-        public void return_OnlyForTaxi_when_plate_ends_with_T_and_customer_isnot_taxi(string plate)
+        public void return_InvalidFormat_when_plate_ends_with_T_and_customer_isnot_taxi(string plate)
         {
             foreach (var service in _services)
             {
