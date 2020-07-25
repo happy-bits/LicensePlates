@@ -1,4 +1,10 @@
-﻿using System.Linq;
+﻿/*
+ Good: much private in Validator + validators is simplified
+ Bad: ReserveredForOtherCustomers have to be updated when new validator appears
+ 
+ */
+using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace LicensePlates.Lab
@@ -24,13 +30,28 @@ namespace LicensePlates.Lab
             Plate = plate;
         }
 
-        public abstract bool IsValid { get; }
+        public virtual bool IsValid => IsNormalPlate && !ReserveredForOtherCustomers();
 
-        public bool IsNormalPlate => Regex.IsMatch(Plate, RegexForNormalPlate());
+        private bool IsNormalPlate => Regex.IsMatch(Plate, RegexForNormalPlate());
 
-        public bool ReserveredForTaxi => Plate.Last() == 'T';
+        private bool ReserveredForTaxi => Plate.Last() == 'T';
 
-        public bool ReserveredForAdvertisments => Plate.StartsWith("MLB");
+        private bool ReserveredForAdvertisments => Plate.StartsWith("MLB");
+
+        private bool ReserveredForOtherCustomers()
+        {
+            if (this is TaxiValidator && ReserveredForTaxi)
+                return true;
+
+            if (this is NormalValidator && (ReserveredForTaxi || ReserveredForAdvertisments))
+                return true;
+
+            if (this is AdvertismentValidator && ReserveredForTaxi)
+                return true;
+
+            return false;
+
+        }
 
         private static string ExcludeLetters(string letters, string lettersToRemove) => string.Join("", letters.Where(c => !lettersToRemove.Contains(c)));
 
@@ -50,8 +71,6 @@ namespace LicensePlates.Lab
         public TaxiValidator(string plate) : base(plate)
         {
         }
-
-        public override bool IsValid => IsNormalPlate && !ReserveredForAdvertisments;
     }
 
     class NormalValidator : Validator
@@ -59,8 +78,6 @@ namespace LicensePlates.Lab
         public NormalValidator(string plate) : base(plate)
         {
         }
-
-        public override bool IsValid => IsNormalPlate && !ReserveredForAdvertisments && !ReserveredForTaxi;
     }
 
     class AdvertismentValidator : Validator
@@ -68,7 +85,6 @@ namespace LicensePlates.Lab
         public AdvertismentValidator(string plate) : base(plate)
         {
         }
-        public override bool IsValid => IsNormalPlate && !ReserveredForTaxi;
     }
 
     class DiplomatValidator : Validator

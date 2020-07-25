@@ -20,6 +20,7 @@ namespace LicensePlates
                 new Factory.RegistrationService(new FakeLicensePlateRepository()) ,
                 new Static.RegistrationService(new FakeLicensePlateRepository()) ,
                 new Lab.RegistrationService(new FakeLicensePlateRepository()) ,
+                new RuleEngine.RegistrationService(new FakeLicensePlateRepository()) ,
             };
         }
 

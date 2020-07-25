@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace LicensePlates.Factory
+namespace LicensePlates.RuleEngine
 {
     class ValidatorFactory
     {
