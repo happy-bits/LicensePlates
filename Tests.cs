@@ -16,12 +16,11 @@ namespace LicensePlates
         public Tests()
         {
             _services = new IRegistrationService[] {
-                //new NoPattern.RegistrationService(new FakeLicensePlateRepository()) ,
-                //new NoPattern2.RegistrationService(new FakeLicensePlateRepository()) ,
-                //new Factory.RegistrationService(new FakeLicensePlateRepository()) ,
-                //new Static.RegistrationService(new FakeLicensePlateRepository()) ,
-                //new Lab.RegistrationService(new FakeLicensePlateRepository()) ,
-                //new RuleEngine.RegistrationService(new FakeLicensePlateRepository()) ,
+                new NoPattern.RegistrationService(new FakeLicensePlateRepository()) ,
+                new NoPattern2.RegistrationService(new FakeLicensePlateRepository()) ,
+                new Factory.RegistrationService(new FakeLicensePlateRepository()) ,
+                new Static.RegistrationService(new FakeLicensePlateRepository()) ,
+                new RuleEngine.RegistrationService(new FakeLicensePlateRepository()) ,
                 new ChainOfResponsibility.RegistrationService(new FakeLicensePlateRepository()) ,
             };
         }
