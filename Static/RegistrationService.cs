@@ -1,4 +1,14 @@
-﻿using System.Linq;
+﻿/*
+ Ingen bra lösning
+
+ Allt är kopplat till Helper-klassen som inte är utbyggdbar alls
+
+ Om programmet utvecklas så är det inte bra att ha all viktig businesslogik i en enskild "god class" som hela världen är beroende av
+
+ Denna lösning är procedural, inte objektorienterad. Den är global, inte encapsulated.
+ 
+ */
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace LicensePlates.Static
