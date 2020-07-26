@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*
+ Question: 
+ 
+ What do you think about this solution? 
+
+ I'm not so fond of the solution :) but maybe one good thing is that the order of validatorns in BuildChain doesn't matter so it's possible to later change the order for performance reasons.
+ 
+ */
+
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -18,18 +26,6 @@ namespace LicensePlates.ChainOfResponsibility
             if (_next == null)
                 return true;
             return _next.IsValid(plateInfo);
-        }
-    }
-
-    class PlateInfo
-    {
-        public CustomerType CustomerType { get; }
-        public string Plate { get; }
-
-        public PlateInfo(string plate, CustomerType customerType)
-        {
-            Plate = plate;
-            CustomerType = customerType;
         }
     }
 
@@ -88,6 +84,18 @@ namespace LicensePlates.ChainOfResponsibility
         }
     }
 
+    class PlateInfo
+    {
+        public CustomerType CustomerType { get; }
+        public string Plate { get; }
+
+        public PlateInfo(string plate, CustomerType customerType)
+        {
+            Plate = plate;
+            CustomerType = customerType;
+        }
+    }
+
     class RegistrationService : IRegistrationService
     {
         private readonly ILicensePlateRepository _repo;
@@ -111,18 +119,33 @@ namespace LicensePlates.ChainOfResponsibility
             return Result.Success;
         }
 
+        // Question: should this method be in this class? If no: where?
+
         private bool IsValid(PlateInfo plateInfo)
         {
-            Validator validator = new DiplomatValidator();
-            Validator normal = new NormalPlateValidator();
-            Validator taxi = new ReservedForTaxiValidator();
-            Validator advertisment = new ReservedForAdvertismentValidator();
-
-            validator.SetNext(normal);
-            normal.SetNext(taxi);
-            taxi.SetNext(advertisment);
+            var validator = BuildChain(
+                new DiplomatValidator(),
+                new NormalPlateValidator(),
+                new ReservedForTaxiValidator(),
+                new ReservedForAdvertismentValidator()
+                );
 
             return validator.IsValid(plateInfo);
+        }
+
+        // Question: I guess this method should belong to another class. Maybe be generic. If yes what would you call that class?
+
+        private static Validator BuildChain(params Validator[] validators)
+        {
+            var validator = validators[0];
+
+            for (int i = 0; i < validators.Length-1; i++)
+            {
+                var v = validators[i];
+                v.SetNext(validators[i + 1]);
+            }
+
+            return validator;
         }
     }
 
