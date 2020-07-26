@@ -40,20 +40,18 @@ namespace LicensePlates.NoPattern2
 
         public bool IsValid()
         {
-            if (_customer == CustomerType.Diplomat && !IsValidDiplomatPlate(_plate))
+            if (_customer == CustomerType.Diplomat)
+                return IsValidDiplomatPlate(_plate);
+
+            if (!IsNormalPlate(_plate))
                 return false;
 
-            if (_customer != CustomerType.Diplomat)
-            {
-                if (!IsNormalPlate(_plate))
-                    return false;
+            if (_customer != CustomerType.Taxi && ReserveredForTaxi(_plate))
+                return false;
 
-                if (_customer != CustomerType.Taxi && ReserveredForTaxi(_plate))
-                    return false;
+            if (_customer != CustomerType.Advertisment && ReserveredForAdvertisments(_plate))
+                return false;
 
-                if (_customer != CustomerType.Advertisment && ReserveredForAdvertisments(_plate))
-                    return false;
-            }
             return true;
 
         }
